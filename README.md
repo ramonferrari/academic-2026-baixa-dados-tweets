@@ -29,7 +29,6 @@ baixa-dados-tweets/
 ├── .gitignore                   # Proteção contra vazamento de chaves e dados brutos
 ├── pyproject.toml               # Dependências do projeto (uv / PEP 621)
 ├── uv.lock                      # Lockfile determinístico do uv
-├── GEMINI.md                    # Memória de contexto operacional e notas de sessão
 ├── README.md                    # Guia completo de uso e manual de parâmetros
 ├── data/                        # Dados gerados (ignorado pelo git)
 │   ├── sample_tweets.parquet    # Amostra de teste colunar
