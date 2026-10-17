@@ -1,0 +1,22 @@
+# Python & Bytecode
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+*.pytest_cache/
+
+# Ambientes virtuais e variáveis secretas
+.venv/
+.env
+
+# Dados e saídas baixadas (protege termos do X e reduz tamanho do repo)
+data/
+*.parquet
+*.jsonl
+
+# Sistema Operacional & IDEs
+.DS_Store
+.vscode/
+.idea/
