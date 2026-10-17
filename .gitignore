@@ -21,3 +21,11 @@ data/
 .vscode/
 .idea/
 .ruff_cache
+
+## IA
+.gemini/
+.claude/
+.openai/
+CLAUDE.md
+GEMINI.md
+OPENAI.md
