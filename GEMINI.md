@@ -59,7 +59,7 @@ O objetivo principal deste projeto é construir um pipeline robusto, econômico 
 ## 3. O Que Falta Fazer
 
 1. **Recarga de Créditos para Completar o Dia (17/10/2026):**
-   - Quando o Ramon decidir alocar novo saldo na conta Developer:
+   - Quando o Ferrari decidir alocar novo saldo na conta Developer:
      - Coletar a manhã restante (00:00 às 12:19 UTC): `uv run python src/03_bulk_download_tweets.py --resume` (estimativa: ~15.000 tweets / ~US$ 75).
      - Coletar o final da noite (19:23 às 23:59 UTC): `uv run python src/03_bulk_download_tweets.py --resume-latest` (estimativa: ~5.500 tweets / ~US$ 28).
 2. **Pipeline de Pré-Processamento e NLP:**
@@ -81,10 +81,10 @@ status: arquivado
 # Sessão: Coleta Massiva de Tweets sobre IA Multilíngue via API v2 do X
 
 ## Contexto
-O Ramon solicitou a criação de um projeto para coletar postagens públicas no X/Twitter sobre Inteligência Artificial cobrindo múltiplos idiomas (com foco nos 15 a 20 maiores) e as principais IAs generativas de fronteira (ChatGPT, Claude, Gemini, GPT). O Ramon contratou créditos de desenvolvedor (US$ 45.00 no modelo Pay-Per-Use) e precisava de um fluxo limpo em Python com `uv`, com zero complexidade de linha de comando, travas financeiras rígidas para não estourar o orçamento e persistência em Apache Parquet para análise posterior.
+O Ferrari solicitou a criação de um projeto para coletar postagens públicas no X/Twitter sobre Inteligência Artificial cobrindo múltiplos idiomas (com foco nos 15 a 20 maiores) e as principais IAs generativas de fronteira (ChatGPT, Claude, Gemini, GPT). O Ferrari contratou créditos de desenvolvedor (US$ 45.00 no modelo Pay-Per-Use) e precisava de um fluxo limpo em Python com `uv`, com zero complexidade de linha de comando, travas financeiras rígidas para não estourar o orçamento e persistência em Apache Parquet para análise posterior.
 
 ## O que foi feito
-1. Estruturado o ambiente Python 3.12 com `uv` em `/Users/ramonferrari/second_brain/baixa-dados-tweets` contendo `pyproject.toml`, `.env` e controle de pacotes (`httpx`, `pyarrow`, `rich`, `pydantic-settings`).
+1. Estruturado o ambiente Python 3.12 com `uv` em `/Users/Ferrariferrari/second_brain/baixa-dados-tweets` contendo `pyproject.toml`, `.env` e controle de pacotes (`httpx`, `pyarrow`, `rich`, `pydantic-settings`).
 2. Diagnosticada a cobrança da API do X: solucionado o erro HTTP 402 após esclarecer a necessidade de compra pré-paga de créditos na Developer Console.
 3. Projetada a query canônica de busca (460 caracteres, abaixo do limite de 512) em `src/baixa_dados_tweets/config.py`:
    - Incluídos os 15 maiores idiomas e os termos `ChatGPT`, `Claude`, `Gemini`, `GPT`, `LLM`, `GenAI`.
@@ -94,7 +94,7 @@ O Ramon solicitou a criação de um projeto para coletar postagens públicas no 
    - `01_test_connectivity.py`: Validação de conexão e autenticação com @X.
    - `02_fetch_sample_tweets.py`: Teste amostral de 10 tweets com visualização em tabela Rich.
    - `03_bulk_download_tweets.py`: Coleta massiva contínua com paginação via `next_token`, streaming `.jsonl` e conversão atômica para `.parquet`.
-5. Excluído o script redundante `04_search_ai_multilingual.py` a pedido do Ramon para evitar confusão.
+5. Excluído o script redundante `04_search_ai_multilingual.py` a pedido do Ferrari para evitar confusão.
 6. Executado o coletor massivo `03_bulk_download_tweets.py`:
    - Baixados com sucesso **8.998 tweets** em 136,2 segundos, consumindo **US$ 44.9900** (~R$ 260,94).
    - Janela de dados coletados: `2026-10-17T12:19:55Z` até `2026-10-17T19:23:17Z` (~7 horas contínuas de 17/10/2026).
@@ -109,9 +109,9 @@ O Ramon solicitou a criação de um projeto para coletar postagens públicas no 
    - Implementada desduplicação por `id` em `storage.py` no pipeline Parquet.
 
 ## Decisões
-1. O Ramon optou por concentrar o escopo de idiomas nos 15 maiores e priorizar a inclusão nominal dos principais modelos generativos (`ChatGPT`, `Claude`, `Gemini`, `GPT`, `LLM`, `GenAI`), mantendo o tamanho da query dentro do teto estrito de 512 caracteres da API.
-2. O Ramon decidiu excluir o script `04_search_ai_multilingual.py`, consolidando a operação em scripts numerados diretos (`01`, `02`, `03`) que executam sem necessidade de passar parâmetros complexos no terminal.
-3. O Ramon estabeleceu a trava de orçamento em US$ 45.00 para a primeira rodada exploratória, consumindo integralmente o crédito na coleta das últimas 7 horas do dia.
+1. O Ferrari optou por concentrar o escopo de idiomas nos 15 maiores e priorizar a inclusão nominal dos principais modelos generativos (`ChatGPT`, `Claude`, `Gemini`, `GPT`, `LLM`, `GenAI`), mantendo o tamanho da query dentro do teto estrito de 512 caracteres da API.
+2. O Ferrari decidiu excluir o script `04_search_ai_multilingual.py`, consolidando a operação em scripts numerados diretos (`01`, `02`, `03`) que executam sem necessidade de passar parâmetros complexos no terminal.
+3. O Ferrari estabeleceu a trava de orçamento em US$ 45.00 para a primeira rodada exploratória, consumindo integralmente o crédito na coleta das últimas 7 horas do dia.
 4. Decidiu-se implementar a continuidade via IDs do Twitter (*Snowflake IDs* via `until_id` e `since_id`) em vez de timestamps soltos, garantindo que o X não cobre novamente por tweets já lidos caso mais créditos sejam adicionados.
 
 ## Aprendizados
@@ -122,7 +122,7 @@ O Ramon solicitou a criação de um projeto para coletar postagens públicas no 
 5. O volume de tweets orgânicos sobre IA nos 15 maiores idiomas é de aproximadamente ~1.280 tweets por hora, totalizando cerca de 30.000 tweets por dia de 24 horas.
 
 ## Em aberto
-1. Definição pelo Ramon de recarga de créditos na Developer Console para completar o dia de 17/10/2026 (estimativa de ~US$ 105 para cobrir as 17 horas restantes).
+1. Definição pelo Ferrari de recarga de créditos na Developer Console para completar o dia de 17/10/2026 (estimativa de ~US$ 105 para cobrir as 17 horas restantes).
 2. Definição dos critérios de pré-processamento de texto e modelagem de tópicos para os dados coletados.
 
 ## Próximos passos
