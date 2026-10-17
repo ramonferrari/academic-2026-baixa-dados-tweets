@@ -1,0 +1,20 @@
+cff-version: 1.2.0
+message: "If you use this software in your research or project, please cite it as below."
+authors:
+  - family-names: "Ferrari"
+    given-names: "Ramon"
+    email: "ramon.ferrari@gmail.com"
+title: "Baixa Dados Tweets: Pipeline de Coleta e Análise em Larga Escala via API v2 do X"
+version: 0.1.0
+date-released: 2026-10-17
+license: Apache-2.0
+repository-code: "https://github.com/ramonferrari/baixa-dados-tweets"
+keywords:
+  - twitter-api
+  - x-api
+  - artificial-intelligence
+  - polars
+  - parquet
+  - llm
+  - natural-language-processing
+  - multilingual

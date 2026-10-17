@@ -1,0 +1,33 @@
+[project]
+name = "baixa-dados-tweets"
+version = "0.1.0"
+description = "Pipeline para download, higienização e análise de dados da API v2 do X com Polars e Parquet"
+readme = "README.md"
+authors = [
+    { email = "ramon.ferrari@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.28.1",
+    "polars>=2.0.0",
+    "pyarrow>=26.0.0",
+    "pydantic>=2.14.1",
+    "python-dotenv>=1.2.4",
+    "rich>=15.0.0",
+    "ruff>=0.17.1",
+]
+
+[project.scripts]
+baixa-dados-tweets = "baixa_dados_tweets:main"
+
+[build-system]
+requires = ["uv_build>=0.12.17,<0.13.0"]
+build-backend = "uv_build"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = ["E501", "E402"]
