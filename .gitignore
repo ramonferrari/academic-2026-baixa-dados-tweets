@@ -22,10 +22,8 @@ data/
 .idea/
 .ruff_cache
 
-## IA
+## IA (configurações locais de ferramentas; GEMINI.md e CLAUDE.md são versionados de propósito)
 .gemini/
 .claude/
 .openai/
-CLAUDE.md
-GEMINI.md
 OPENAI.md

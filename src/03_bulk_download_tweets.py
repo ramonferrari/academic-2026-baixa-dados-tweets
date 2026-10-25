@@ -5,6 +5,7 @@
 Baixa tweets em larga escala da API v2 do X com suporte a:
 - Paginação automática via next_token
 - Continuidade inteligente (--resume para voltar no tempo, --resume-latest para tweets novos)
+- Suporte a Recent Search e Full-Archive Search (/2/tweets/search/all) para datas históricas
 - Prevenção total de cobranças duplicadas da API do X
 - Filtros de tempo (--since-hours, --start-time, --end-time)
 - Salvamento contínuo em .jsonl (não perde dados se interrompido)
@@ -16,7 +17,8 @@ Baixa tweets em larga escala da API v2 do X com suporte a:
 Uso:
     uv run python src/03_bulk_download_tweets.py
     uv run python src/03_bulk_download_tweets.py --resume
-    uv run python src/03_bulk_download_tweets.py --resume-latest
+    uv run python src/03_bulk_download_tweets.py --resume --start-time "2026-10-17T00:00:00Z"
+    uv run python src/03_bulk_download_tweets.py --archive --start-time "2026-10-10T00:00:00Z"
 """
 
 import argparse
@@ -24,7 +26,7 @@ import re
 import signal
 import sys
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pyarrow.parquet as pq
@@ -82,10 +84,30 @@ def slugify(text: str) -> str:
     return re.sub(r"[-\s]+", "_", text)[:30]
 
 
+def subtract_one_second(iso_str: str) -> str:
+    """Subtrai 1 segundo de uma string ISO 8601 UTC."""
+    cleaned = iso_str.replace("Z", "+00:00")
+    dt = datetime.fromisoformat(cleaned) - timedelta(seconds=1)
+    return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+def is_older_than_days(iso_str: str | None, days: int = 7) -> bool:
+    """Verifica se uma data ISO é anterior a N dias a partir de agora."""
+    if not iso_str:
+        return False
+    try:
+        cleaned = iso_str.replace("Z", "+00:00")
+        dt = datetime.fromisoformat(cleaned)
+        diff = datetime.now(UTC) - dt
+        return diff.total_seconds() > (days * 86400)
+    except Exception:
+        return False
+
+
 def get_existing_bounds(parquet_path: Path) -> tuple[str | None, str | None, str | None, str | None, int]:
     """
     Inspeciona arquivo Parquet existente para obter:
-    (oldest_id, oldest_date, newest_id, newest_date, total_existing)
+    (oldest_id, oldest_date, newest_id, max_date, total_existing)
     """
     if not parquet_path.exists():
         return None, None, None, None, 0
@@ -136,6 +158,11 @@ def parse_args():
         "--resume-latest",
         action="store_true",
         help="Coleta tweets novos publicados após o tweet mais recente já baixado",
+    )
+    parser.add_argument(
+        "--archive",
+        action="store_true",
+        help="Usa o endpoint Full-Archive Search (/2/tweets/search/all) para datas com mais de 7 dias",
     )
     parser.add_argument(
         "--since-hours",
@@ -191,12 +218,30 @@ def main():
 
     oldest_id, min_date, newest_id, max_date, existing_count = get_existing_bounds(parquet_filepath)
 
+    use_archive = args.archive
+
+    # Detecção automática de necessidade do endpoint Full-Archive
+    if is_older_than_days(iso_start_time, 6) or is_older_than_days(iso_end_time, 6):
+        use_archive = True
+
     if args.resume:
-        if oldest_id:
-            until_id = oldest_id
-            console.print(
-                f"[bold green]🔄 Modo --resume ativado:[/bold green] Continuando para trás a partir do tweet mais antigo ({min_date}). Zero duplicatas!"
-            )
+        if min_date:
+            if is_older_than_days(min_date, 6):
+                use_archive = True
+
+            if iso_start_time:
+                # O X proíbe misturar until_id com start_time/end_time.
+                # Como o usuário definiu start_time, usamos end_time imediatamente anterior ao lote já salvo:
+                iso_end_time = subtract_one_second(min_date)
+                until_id = None
+                console.print(
+                    f"[bold green]🔄 Modo --resume com janela de tempo:[/bold green] Buscando de {iso_start_time} até {iso_end_time} (anterior a {min_date}). Zero duplicatas!"
+                )
+            else:
+                until_id = oldest_id
+                console.print(
+                    f"[bold green]🔄 Modo --resume ativado:[/bold green] Continuando para trás a partir do tweet mais antigo ({min_date}). Zero duplicatas!"
+                )
         else:
             console.print(
                 "[yellow]⚠️ Modo --resume ativado, mas nenhum dado prévio encontrado. Iniciando busca normal...[/yellow]"
@@ -204,6 +249,8 @@ def main():
     elif args.resume_latest:
         if newest_id:
             since_id = newest_id
+            if is_older_than_days(max_date, 6):
+                use_archive = True
             console.print(
                 f"[bold green]🔄 Modo --resume-latest ativado:[/bold green] Buscando tweets novos publicados após {max_date}. Zero duplicatas!"
             )
@@ -216,7 +263,7 @@ def main():
     console.print("=" * 68)
 
     try:
-        client = XClient()
+        client = XClient(max_budget_usd=max_budget)
     except ValueError as e:
         console.print(f"[bold red]❌ Erro de configuração:[/bold red] {e}")
         sys.exit(1)
@@ -228,6 +275,11 @@ def main():
     summary_table.add_row("[bold cyan]Termo de Busca:[/bold cyan]", f"[yellow]{args.query}[/yellow]")
     summary_table.add_row("[bold cyan]Meta de Novos Tweets:[/bold cyan]", f"{total_target:,} tweets")
     summary_table.add_row("[bold cyan]Tamanho do Lote:[/bold cyan]", f"{batch_size} tweets por requisição")
+    endpoint_name = (
+        "Full-Archive Search (/2/tweets/search/all)" if use_archive else "Recent Search (/2/tweets/search/recent)"
+    )
+    summary_table.add_row("[bold cyan]Endpoint da API:[/bold cyan]", f"[magenta]{endpoint_name}[/magenta]")
+
     if existing_count > 0:
         summary_table.add_row(
             "[bold cyan]Base Existente:[/bold cyan]", f"{existing_count:,} tweets salvos anteriormente"
@@ -278,7 +330,7 @@ def main():
             current_batch = max(current_batch, 10)
 
             try:
-                response = client.search_recent_tweets(
+                response = client.search_tweets(
                     query=args.query,
                     max_results=current_batch,
                     next_token=next_token,
@@ -286,6 +338,7 @@ def main():
                     end_time=iso_end_time,
                     until_id=until_id,
                     since_id=since_id,
+                    archive=use_archive,
                 )
             except BudgetExceededError as be:
                 console.print(f"\n[bold yellow]🛑 {be}[/bold yellow]")
@@ -342,6 +395,7 @@ def main():
 
     meta_info = {
         "query": args.query,
+        "endpoint": "search/all" if use_archive else "search/recent",
         "new_tweets_downloaded": total_downloaded,
         "pages_fetched": pages_fetched,
         "elapsed_seconds": round(elapsed_seconds, 2),

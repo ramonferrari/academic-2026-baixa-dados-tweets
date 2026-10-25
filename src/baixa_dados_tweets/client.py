@@ -26,14 +26,18 @@ class XAPIError(Exception):
 class BudgetExceededError(Exception):
     """Lançado quando o limite de orçamento estipulado pelo usuário é atingido."""
 
+    pass
+
 
 class XClient:
     """Cliente oficial para interagir com os endpoints da API v2 do X."""
 
     BASE_URL = "https://api.x.com/2"
 
-    def __init__(self, bearer_token: str | None = None):
+    def __init__(self, bearer_token: str | None = None, max_budget_usd: float | None = None):
         self.bearer_token = bearer_token or settings.bearer_token
+        # Teto de gasto desta sessão: parâmetro explícito (ex.: --max-budget) ou valor do .env
+        self.max_budget_usd = max_budget_usd if max_budget_usd is not None else settings.max_budget_usd
         if not self.bearer_token or self.bearer_token == "seu_bearer_token_aqui":
             raise ValueError(
                 "X_BEARER_TOKEN não configurado! "
@@ -76,9 +80,9 @@ class XClient:
     def _request(self, method: str, endpoint: str, **kwargs) -> dict[str, Any]:
         """Executa requisição HTTP com verificação de erros e rate limits."""
         # Verificação preventiva de orçamento
-        if self.estimated_cost_usd >= settings.max_budget_usd:
+        if self.estimated_cost_usd >= self.max_budget_usd:
             raise BudgetExceededError(
-                f"Limite de orçamento atingido: US$ {self.estimated_cost_usd:.4f} >= US$ {settings.max_budget_usd:.2f}"
+                f"Limite de orçamento atingido: US$ {self.estimated_cost_usd:.4f} >= US$ {self.max_budget_usd:.2f}"
             )
 
         retries = 3
@@ -152,7 +156,7 @@ class XClient:
         data = self._request("GET", "/users/by/username/X", params={"user.fields": "description,public_metrics"})
         return data
 
-    def search_recent_tweets(
+    def search_tweets(
         self,
         query: str,
         max_results: int = 10,
@@ -161,9 +165,10 @@ class XClient:
         end_time: str | None = None,
         until_id: str | None = None,
         since_id: str | None = None,
+        archive: bool = False,
     ) -> dict[str, Any]:
         """
-        Busca tweets dos últimos 7 dias via endpoint Recent Search (/2/tweets/search/recent).
+        Busca tweets via endpoint Recent Search (/2/tweets/search/recent) ou Full-Archive (/2/tweets/search/all).
 
         :param query: Termo de pesquisa (ex: 'python lang:pt -is:retweet')
         :param max_results: Quantidade por página (mínimo 10, máximo 100)
@@ -172,7 +177,9 @@ class XClient:
         :param end_time: Data/hora ISO UTC final
         :param until_id: Retorna tweets com ID menor (mais antigos) que este ID
         :param since_id: Retorna tweets com ID maior (mais recentes) que este ID
+        :param archive: Se True, consulta o arquivo histórico completo (/2/tweets/search/all)
         """
+        endpoint = "/tweets/search/all" if archive else "/tweets/search/recent"
         params: dict[str, Any] = {
             "query": query,
             "max_results": max(10, min(100, max_results)),
@@ -183,22 +190,29 @@ class XClient:
 
         if next_token:
             params["next_token"] = next_token
+
+        # O X proíbe enviar until_id/since_id junto com start_time/end_time
+        if until_id and not (start_time or end_time):
+            params["until_id"] = until_id
+        if since_id and not (start_time or end_time):
+            params["since_id"] = since_id
+
         if start_time:
             params["start_time"] = start_time
         if end_time:
             params["end_time"] = end_time
-        if until_id:
-            params["until_id"] = until_id
-        if since_id:
-            params["since_id"] = since_id
 
-        result = self._request("GET", "/tweets/search/recent", params=params)
+        result = self._request("GET", endpoint, params=params)
 
         # Incrementa contador de tweets lidos para cálculo de custo
         tweets = result.get("data", [])
         self.total_tweets_read += len(tweets)
 
         return result
+
+    def search_recent_tweets(self, *args, **kwargs) -> dict[str, Any]:
+        """Alias mantido para compatibilidade retroativa."""
+        return self.search_tweets(*args, **kwargs)
 
     def close(self) -> None:
         """Fecha a conexão HTTP subjacente."""

@@ -8,7 +8,7 @@ title: "Baixa Dados Tweets: Pipeline de Coleta e Análise em Larga Escala via AP
 version: 0.1.0
 date-released: 2026-10-17
 license: Apache-2.0
-repository-code: "https://github.com/ramonferrari/baixa-dados-tweets"
+repository-code: "https://github.com/ramonferrari/academic-2026-baixa-dados-tweets"
 keywords:
   - twitter-api
   - x-api

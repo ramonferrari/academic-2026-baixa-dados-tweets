@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Pipeline para download, higienização e análise de dados da API v2 do X com Polars e Parquet"
 readme = "README.md"
 authors = [
-    { email = "ramon.ferrari@gmail.com" }
+    { name = "Ramon Ferrari", email = "ramon.ferrari@gmail.com" }
 ]
 requires-python = ">=3.12"
 dependencies = [
@@ -14,11 +14,7 @@ dependencies = [
     "pydantic>=2.14.1",
     "python-dotenv>=1.2.4",
     "rich>=15.0.0",
-    "ruff>=0.17.1",
 ]
-
-[project.scripts]
-baixa-dados-tweets = "baixa_dados_tweets:main"
 
 [build-system]
 requires = ["uv_build>=0.12.17,<0.13.0"]
@@ -31,3 +27,8 @@ target-version = "py312"
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 ignore = ["E501", "E402"]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.17.2",
+]
